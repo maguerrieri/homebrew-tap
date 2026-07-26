@@ -14,3 +14,4 @@ brew install --cask <name>
 | Cask | Description |
 |------|-------------|
 | `clarc` | Native macOS GUI for Claude Code |
+| `openloco` | Open-source re-implementation of Chris Sawyer's Locomotion (Apple silicon only) |
