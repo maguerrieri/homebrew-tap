@@ -48,11 +48,37 @@ when done if the tap wasn't installed before.
   `OSDependsOn` cop when there genuinely is no floor, and becomes redundant once
   a `macos:` version is present.
 
+- **Installing from this tap needs `brew trust` first.** Homebrew 6.0 enforces
+  tap trust by default (`require_tap_trust?` is true), so a fresh
+  `brew install --cask maguerrieri/tap/<name>` fails with "Refusing to load cask
+  … from untrusted tap". Users need `brew trust maguerrieri/tap` once per
+  machine. Note that tapping a *local path* for testing records a trust entry
+  keyed to that path, so local testing silently skips this gate — it is not
+  evidence that a real install works.
+
 - **`brew install --cask` does not strip the quarantine xattr — it adds one.**
-  So an ad-hoc signed / unnotarized app *will* be blocked by Gatekeeper on first
-  launch (it stalls at `_dyld_start`; `spctl -a -t exec` exits non-zero).
-  Document the System Settings → Privacy & Security → "Open Anyway" step in
-  `caveats`. Do **not** ship an `xattr -d` bypass — Homebrew disallows it.
+  So an ad-hoc signed / unnotarized app is challenged by Gatekeeper on first
+  launch. Do **not** ship an `xattr -d` bypass — Homebrew disallows it; point at
+  `--no-quarantine` in `caveats` instead, with the risk stated.
+
+- **Distinguish "unnotarized" from "damaged" — they have different remedies.**
+  "Open Anyway" in System Settings only exists for apps with a *valid* signature
+  that merely lack notarization. If the bundle has no `Contents/_CodeSignature`
+  (i.e. upstream never codesigned the `.app`, only the linker ad-hoc-signed the
+  executable), `codesign --verify` reports "code has no resources but signature
+  indicates they must be present" and macOS calls it **"damaged and can't be
+  opened"** — no Open button, no System Settings entry. `--no-quarantine` is
+  then the only user-side option. Check `ls <app>/Contents/` for
+  `_CodeSignature` before writing any Gatekeeper caveat.
+
+- **A GUI app stalled at `_dyld_start` with 0% CPU is usually waiting on an
+  unanswered Gatekeeper dialog, not hard-blocked.** Launching headlessly (or
+  with `open -g`) leaves the prompt unseen and the process suspended
+  indefinitely. Confirm with the log before drawing conclusions:
+  `/usr/bin/log show --last 1h --predicate 'process == "syspolicyd" OR process
+  == "CoreServicesUIAgent"'` and look for `Prompt shown … waiting for response`
+  / `present code-evaluation prompt`. (`log` is shadowed by a shell function
+  here — use the absolute path.)
 
 - **Verify `zap` paths; don't derive them from the bundle id alone.** Read the
   upstream source for wherever it resolves its config/data directory. Bundle-id
