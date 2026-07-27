@@ -32,13 +32,22 @@ cask "openloco" do
 
   caveats <<~EOS
     OpenLoco requires the asset files of the original Chris Sawyer's Locomotion,
-    which are not distributed with it. Buy and install the original game first:
+    which are not distributed with it. The original is a Windows-only game, so
+    on macOS you extract its data files rather than install it:
+
+      GOG:   https://www.gog.com/game/chris_sawyers_locomotion
+             brew install innoextract
+             innoextract setup_chris_sawyers_locomotion_*.exe
+             the game folder is extracted to ./app
 
       Steam: https://store.steampowered.com/app/356430/
-      GOG:   https://www.gog.com/game/chris_sawyers_locomotion
+             pull the Windows depot with the steamcmd cask:
+             steamcmd +@sSteamCmdForcePlatformType windows
+                      +login USER +app_update 356430 validate +quit
 
     On first launch OpenLoco tries to locate the game folder automatically, and
-    prompts you to select it if that fails.
+    prompts you to select it if that fails. Point it at the folder containing
+    Data/g1.DAT.
 
     Upstream ships the app without a bundle code signature: there is no
     Contents/_CodeSignature, only an ad-hoc linker signature on the executable,
