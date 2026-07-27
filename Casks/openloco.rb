@@ -20,10 +20,11 @@ cask "openloco" do
 
   app "OpenLoco.app"
 
-  # Platform::getUserDirectory() (Platform.Macos.mm) returns
-  # ~/Library/Application Support/OpenLoco, and Environment.cpp roots every
-  # user-writable PathId there (config, saves, landscapes, screenshots, custom
-  # objects), as do the logs/ and crashes/ subdirectories.
+  # The first path is source-derived: Platform::getUserDirectory()
+  # (Platform.Macos.mm) returns ~/Library/Application Support/OpenLoco, and
+  # Environment.cpp roots every user-writable PathId there (config, saves,
+  # landscapes, screenshots, custom objects), as does logs/ (Logging.cpp).
+  # The remaining two are the usual bundle-id conventions, not observed.
   zap trash: [
     "~/Library/Application Support/OpenLoco",
     "~/Library/Preferences/io.openloco.OpenLoco.plist",
@@ -36,18 +37,12 @@ cask "openloco" do
     on macOS you extract its data files rather than install it:
 
       GOG:   https://www.gog.com/game/chris_sawyers_locomotion
-             brew install innoextract
-             innoextract setup_chris_sawyers_locomotion_*.exe
-             the game folder is extracted to ./app
-
+             unpack the installer with innoextract; the game lands in ./app
       Steam: https://store.steampowered.com/app/356430/
-             pull the Windows depot with the steamcmd cask:
-             steamcmd +@sSteamCmdForcePlatformType windows
-                      +login USER +app_update 356430 validate +quit
+             fetch the Windows depot with steamcmd (app id 356430)
 
-    On first launch OpenLoco tries to locate the game folder automatically, and
-    prompts you to select it if that fails. Point it at the folder containing
-    Data/g1.DAT.
+    OpenLoco only auto-detects Windows install paths, so on macOS it always
+    prompts for the folder. Point it at the one containing Data/g1.DAT.
 
     Upstream ships the app without a bundle code signature: there is no
     Contents/_CodeSignature, only an ad-hoc linker signature on the executable,
@@ -55,11 +50,12 @@ cask "openloco" do
     app as "damaged and can't be opened" -- confirmed on both macOS 26 and 27 --
     which offers no "Open Anyway" button in System Settings.
 
-    Installing without quarantine is the documented way around this:
+    Homebrew 6 removed the --no-quarantine flag, so the app will not launch from
+    a normal install until you clear the attribute yourself:
 
-      brew install --cask --no-quarantine openloco
+      xattr -dr com.apple.quarantine /Applications/OpenLoco.app
 
-    That flag reduces Gatekeeper's protection, so use it only if you accept the
-    risk. The real fix belongs upstream, in how the release is signed.
+    That opts this app out of Gatekeeper's checks, so run it only if you trust
+    the download. The real fix belongs upstream, in how the release is signed.
   EOS
 end
