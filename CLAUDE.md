@@ -41,6 +41,10 @@ when done if the tap wasn't installed before.
   (`vtool -show-build <binary>`) and fails with "Artifact defined :x as the
   minimum macOS version but the cask declared no minimum" when the cask omits
   it. An empty `LSMinimumSystemVersion` does **not** mean there is no floor.
+  The audit requires **exact** equality, so re-run `vtool -show-build` on every
+  version bump, not just the first: the day upstream raises its deployment
+  target, a routine version+sha bump starts failing `--strict --online`, and
+  `brew bump-cask-pr` will not touch `depends_on` for you.
 
 - **`depends_on macos: ">= :sequoia"` is deprecated.** Use the bare symbol form
   `depends_on macos: :sequoia`, which now means ">=". Use `maximum_macos:` for
@@ -56,10 +60,18 @@ when done if the tap wasn't installed before.
   keyed to that path, so local testing silently skips this gate — it is not
   evidence that a real install works.
 
-- **`brew install --cask` does not strip the quarantine xattr — it adds one.**
-  So an ad-hoc signed / unnotarized app is challenged by Gatekeeper on first
-  launch. Do **not** ship an `xattr -d` bypass — Homebrew disallows it; point at
-  `--no-quarantine` in `caveats` instead, with the risk stated.
+- **`brew install --cask` does not strip the quarantine xattr — it adds one**,
+  so an ad-hoc signed / unnotarized app is challenged by Gatekeeper on first
+  launch. **`--no-quarantine` is gone**: Homebrew 6 removed the CLI switch
+  (`brew install --cask --no-quarantine` now fails with `invalid option`), and
+  `EnvConfig.cask_opts_quarantine?` survives with zero call sites, so the
+  `HOMEBREW_CASK_OPTS` route is dead too. The only remedy left is telling the
+  user to clear the attribute after install:
+  `xattr -dr com.apple.quarantine /Applications/<App>.app`.
+  To be precise about the rule people cite here: `Acceptable-Casks.md` forbids
+  software that *requires* Gatekeeper to be bypassed, which is an acceptance
+  policy for the **official** tap — it is not a lint, and no audit or rubocop
+  checks for `xattr`. Nothing blocks documenting it in a personal tap.
 
 - **Distinguish "unnotarized" from "damaged" — they have different remedies.**
   "Open Anyway" in System Settings only exists for apps with a *valid* signature
@@ -67,10 +79,10 @@ when done if the tap wasn't installed before.
   (i.e. upstream never codesigned the `.app`, only the linker ad-hoc-signed the
   executable), `codesign --verify` reports "code has no resources but signature
   indicates they must be present" and macOS calls it **"damaged and can't be
-  opened"** — no Open button, no System Settings entry. `--no-quarantine` is
-  then the only user-side option. Check `ls <app>/Contents/` for
-  `_CodeSignature` before writing any Gatekeeper caveat. (Reproduced on macOS 26
-  and 27, so treat it as general, not a beta-OS quirk.)
+  opened"** — no Open button, no System Settings entry, so clearing the
+  quarantine attribute is the only user-side option. Check `ls <app>/Contents/`
+  for `_CodeSignature` before writing any Gatekeeper caveat. (Reproduced on
+  macOS 26 and 27, so treat it as general, not a beta-OS quirk.)
 
 - **A GUI app stalled at `_dyld_start` with 0% CPU is usually waiting on an
   unanswered Gatekeeper dialog, not hard-blocked.** Launching headlessly (or
