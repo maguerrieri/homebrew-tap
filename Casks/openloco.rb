@@ -42,9 +42,9 @@ cask "openloco" do
 
     Upstream ships the app without a bundle code signature: there is no
     Contents/_CodeSignature, only an ad-hoc linker signature on the executable,
-    and codesign --verify rejects it. Gatekeeper challenges the first launch as
-    a result. On macOS 27 it reports "damaged and can't be opened", which
-    offers no "Open Anyway" button in System Settings.
+    and codesign --verify rejects it. macOS therefore reports the quarantined
+    app as "damaged and can't be opened" -- confirmed on both macOS 26 and 27 --
+    which offers no "Open Anyway" button in System Settings.
 
     Installing without quarantine is the documented way around this:
 

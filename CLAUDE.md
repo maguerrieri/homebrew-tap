@@ -69,7 +69,8 @@ when done if the tap wasn't installed before.
   indicates they must be present" and macOS calls it **"damaged and can't be
   opened"** — no Open button, no System Settings entry. `--no-quarantine` is
   then the only user-side option. Check `ls <app>/Contents/` for
-  `_CodeSignature` before writing any Gatekeeper caveat.
+  `_CodeSignature` before writing any Gatekeeper caveat. (Reproduced on macOS 26
+  and 27, so treat it as general, not a beta-OS quirk.)
 
 - **A GUI app stalled at `_dyld_start` with 0% CPU is usually waiting on an
   unanswered Gatekeeper dialog, not hard-blocked.** Launching headlessly (or
