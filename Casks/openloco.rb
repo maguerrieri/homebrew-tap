@@ -40,8 +40,17 @@ cask "openloco" do
     On first launch OpenLoco tries to locate the game folder automatically, and
     prompts you to select it if that fails.
 
-    Upstream's macOS builds are ad-hoc signed and not notarized, so Gatekeeper
-    blocks the first launch. To allow it, open the app once, then approve it in
-    System Settings -> Privacy & Security -> "Open Anyway".
+    Upstream ships the app without a bundle code signature: there is no
+    Contents/_CodeSignature, only an ad-hoc linker signature on the executable,
+    and codesign --verify rejects it. Gatekeeper challenges the first launch as
+    a result. On macOS 27 it reports "damaged and can't be opened", which
+    offers no "Open Anyway" button in System Settings.
+
+    Installing without quarantine is the documented way around this:
+
+      brew install --cask --no-quarantine openloco
+
+    That flag reduces Gatekeeper's protection, so use it only if you accept the
+    risk. The real fix belongs upstream, in how the release is signed.
   EOS
 end
